@@ -13,6 +13,8 @@ Learn more at [Gorgias](https://www.gorgias.com).
 
 ## Install
 
+This CLI is published from its own repo (not vendored into [`mvanhorn/printing-press-library`](https://github.com/mvanhorn/printing-press-library) yet — a library PR is on the roadmap). Install directly from this repo:
+
 ```bash
 go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-cli@latest
 go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-mcp@latest
@@ -118,9 +120,6 @@ gorgias-pp-cli export tickets --format jsonl --output tickets.jsonl
 # Save a named profile of global defaults, then opt in per-call.
 gorgias-pp-cli profile save agent-defaults --agent --compact
 gorgias-pp-cli --profile agent-defaults tickets list
-
-# Ad-hoc SQL over the local mirror — count today's tickets.
-gorgias-pp-cli sql "SELECT COUNT(*) FROM resources WHERE resource_type='tickets' AND substr(json_extract(data,'\$.created_datetime'),1,10) = date('now','localtime')" --agent
 ```
 
 ## Commands
