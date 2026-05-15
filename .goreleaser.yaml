@@ -63,3 +63,20 @@ homebrew_casks:
       name: homebrew-tap
     homepage: "https://github.com/chrisyoungcooks/gorgias-pp-cli"
     description: "Every Gorgias support workflow, agent-native, in one binary."
+    # Both binaries ship in the same archive; declare each so brew
+    # symlinks both into /opt/homebrew/bin (without this, only the
+    # project-name-matched binary gets linked and the MCP server is
+    # stranded inside the Caskroom).
+    binaries:
+      - gorgias-pp-cli
+      - gorgias-pp-mcp
+    # Clear macOS Gatekeeper quarantine on the unsigned binaries so the
+    # first invocation doesn't exit 137 (SIGKILL) with no error. Runs
+    # after the archive is staged, before brew creates the bin symlinks.
+    hooks:
+      post:
+        install: |
+          system_command "/usr/bin/xattr",
+                         args: ["-dr", "com.apple.quarantine", "#{staged_path}/gorgias-pp-cli"]
+          system_command "/usr/bin/xattr",
+                         args: ["-dr", "com.apple.quarantine", "#{staged_path}/gorgias-pp-mcp"]
