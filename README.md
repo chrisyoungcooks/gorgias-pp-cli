@@ -13,14 +13,14 @@ Learn more at [Gorgias](https://www.gorgias.com).
 
 ## Install
 
-This CLI is published from its own repo (not vendored into [`mvanhorn/printing-press-library`](https://github.com/mvanhorn/printing-press-library) yet — a library PR is on the roadmap). Install directly from this repo:
-
 ```bash
 go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-cli@latest
 go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-mcp@latest
 ```
 
-Pre-built binaries are attached to [GitHub Releases](https://github.com/chrisyoungcooks/gorgias-pp-cli/releases). On macOS, clear the Gatekeeper quarantine on a downloaded binary with `xattr -d com.apple.quarantine <binary>`; on Unix, `chmod +x <binary>`.
+Pre-built binaries are attached to every [GitHub Release](https://github.com/chrisyoungcooks/gorgias-pp-cli/releases) — macOS (arm64 + amd64), Linux (arm64 + amd64), Windows (arm64 + amd64). On macOS, clear the Gatekeeper quarantine with `xattr -d com.apple.quarantine <binary>`; on Unix, `chmod +x <binary>`. The MCP server also ships as a Claude Desktop [MCPB bundle](https://github.com/modelcontextprotocol/mcpb) you can install with a double-click; see the [Claude Desktop](#claude-desktop) section below.
+
+Also indexed in the [Printing Press library](https://github.com/mvanhorn/printing-press-library/tree/main/library/customer-support/gorgias).
 
 ## Authentication
 

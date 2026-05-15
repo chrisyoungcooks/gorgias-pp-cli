@@ -18,12 +18,9 @@ metadata:
 
 This skill drives the `gorgias-pp-cli` binary. **You must verify the CLI is installed before invoking any command from this skill.** If it is missing, install it first:
 
-Pre-release: this CLI is not yet published to the Printing Press library or any public Go module path. Until first release, install from source:
-
 ```bash
-# Replace <repo-url> with the actual git URL of this repo.
-git clone <repo-url> gorgias-pp-cli && cd gorgias-pp-cli
-go install ./cmd/gorgias-pp-cli ./cmd/gorgias-pp-mcp
+go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-cli@latest
+go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-mcp@latest
 ```
 
 Requires Go 1.26.3 or newer. Verify with `gorgias-pp-cli --version`. Ensure `$GOPATH/bin` (or `$HOME/go/bin`) is on `$PATH`. If `--version` reports "command not found", the install step did not put the binary on `$PATH`. Do not proceed with skill commands until verification succeeds.
