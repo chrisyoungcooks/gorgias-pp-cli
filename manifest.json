@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "gorgias-pp-mcp",
   "display_name": "Gorgias",
-  "version": "0.0.0-SNAPSHOT-b3ff550",
+  "version": "0.1.0",
   "description": "Gorgias API surface as MCP tools.",
   "author": {
     "name": "CLI Printing Press"
