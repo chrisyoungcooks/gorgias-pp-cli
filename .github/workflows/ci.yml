@@ -1,0 +1,64 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: build + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go mod tidy is clean
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: gofmt
+        run: |
+          out=$(gofmt -l ./)
+          if [ -n "$out" ]; then
+            echo "::error::gofmt detected unformatted files:"
+            echo "$out"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./...
+
+      - name: build CLI + MCP binaries
+        run: |
+          go build -o /tmp/gorgias-pp-cli ./cmd/gorgias-pp-cli
+          go build -o /tmp/gorgias-pp-mcp ./cmd/gorgias-pp-mcp
+
+      - name: smoke (no credentials needed)
+        run: |
+          /tmp/gorgias-pp-cli --version
+          /tmp/gorgias-pp-cli --help > /dev/null
+          /tmp/gorgias-pp-mcp --help > /dev/null
+          /tmp/gorgias-pp-mcp --version
+
+      - name: hero-command smoke
+        run: |
+          # version --json must parse and carry the documented shape
+          /tmp/gorgias-pp-cli version --json | jq -e '.name == "gorgias-pp-cli" and .version != ""'
+          # agent-context --json must include schema_version, commands, and global_flags
+          /tmp/gorgias-pp-cli agent-context --json | jq -e '.schema_version != "" and (.commands | length) > 0 and (.global_flags | length) > 0'
+          # which must rank the curated index for a real query
+          /tmp/gorgias-pp-cli which "list tickets" --json | jq -e '.matches | length > 0'
+          # which with no query returns the full curated index
+          /tmp/gorgias-pp-cli which --json | jq -e '.matches | length >= 20'
+          # api browser exposes the endpoint surface
+          /tmp/gorgias-pp-cli api --json | jq -e 'length > 0'
