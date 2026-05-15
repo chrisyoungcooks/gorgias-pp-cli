@@ -1,8 +1,10 @@
 # Gorgias CLI
 
-**Every Gorgias support workflow, agent-native, in one binary.**
+**Drive your Gorgias support inbox from the terminal — ticket triage, agent replies, customer lookup, and bulk operations across all 108 endpoints, plus a local SQLite mirror for instant search and analytics.**
 
-**108 Gorgias endpoints, ~1K context-token MCP gateway.** A token-efficient CLI for the Gorgias customer support API with a sibling MCP server. Covers tickets, customers, messages, macros, tags, teams, integrations, events, rules, satisfaction surveys, voice calls, custom fields, and views. Built for AI agents first: JSON output, structured doctor checks, local SQLite mirror, full-text search, and a code-orchestration MCP that fits the full Gorgias surface into a `gorgias_search` + `gorgias_execute` gateway instead of 108 typed tools. The MCP server reports its live tool count via `context` (no hardcoded inventory).
+Gorgias is the helpdesk for e-commerce support teams. This CLI gives you (or an AI agent) full control over a Gorgias tenant from a single binary: list, create, update, and reply to tickets via `tickets list / get / update / messages-create`; sweep stuck work with `stale` and `orphans`; query locally with `sync` + `sql` for SQL-grade analytics the live API doesn't expose; full-text search across synced data with `search`; and a sibling `gorgias-pp-mcp` server that lets Claude Desktop, Cursor, or Claude Code drive the surface natively. The MCP runs in code-orchestration mode so its full-API description costs ~1K tokens (not ~25K for one-tool-per-endpoint).
+
+Learn more at [Gorgias](https://www.gorgias.com).
 
 **Status:** Pre-release. All read endpoints are live-verified against a real Gorgias tenant (see `shipcheck-results.json`). 25 of 37 write endpoints are also live-verified (see `writes-live-shipcheck.json`, `writes-verify-once.json`); the remaining 12 are dry-run-only because they require a sandbox tenant (destructive deletes, invitation emails, async bulk jobs, the rule-DSL gate). See "Known gaps" below.
 
