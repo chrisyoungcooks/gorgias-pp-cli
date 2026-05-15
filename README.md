@@ -18,9 +18,15 @@ go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-cli@latest
 go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-mcp@latest
 ```
 
-Pre-built binaries are attached to every [GitHub Release](https://github.com/chrisyoungcooks/gorgias-pp-cli/releases) — macOS (arm64 + amd64), Linux (arm64 + amd64), Windows (arm64 + amd64). On macOS, clear the Gatekeeper quarantine with `xattr -d com.apple.quarantine <binary>`; on Unix, `chmod +x <binary>`. The MCP server also ships as a Claude Desktop [MCPB bundle](https://github.com/modelcontextprotocol/mcpb) you can install with a double-click; see the [Claude Desktop](#claude-desktop) section below.
+Pre-built binaries are attached to every [GitHub Release](https://github.com/chrisyoungcooks/gorgias-pp-cli/releases) — macOS (arm64 + amd64), Linux (arm64 + amd64), Windows (arm64 + amd64). On macOS, clear the Gatekeeper quarantine with `xattr -d com.apple.quarantine <binary>`; on Unix, `chmod +x <binary>`.
 
-Also indexed in the [Printing Press library](https://github.com/mvanhorn/printing-press-library/tree/main/library/customer-support/gorgias).
+Or via Homebrew on macOS/Linux:
+
+```bash
+brew install chrisyoungcooks/tap/gorgias-pp-cli
+```
+
+The brew cask installs both `gorgias-pp-cli` and `gorgias-pp-mcp` and clears the Gatekeeper quarantine for you.
 
 ## Authentication
 
@@ -81,7 +87,7 @@ These capabilities are designed for agent-driven work and don't exist in the Gor
 - **`gorgias-pp-cli api`** — Browse all 108 endpoints with their HTTP method and path. Discovery for the long tail.
 - **`--deliver file:./out.json` / `--deliver webhook:https://...`** — Route command output to a file (atomic write) or POST it to a webhook. No piping or shell redirection required.
 - **`GORGIAS_AUTO_REFRESH_TTL=15m`** — Every read syncs first if the mirror is older than the TTL. Trust local without losing freshness.
-- **`gorgias-pp-cli profile save <name>`** — Capture the current non-default flags as a named profile reusable via `--profile <name>`. Cuts repetition for agents that always reach for `--agent --view-id 626049 --limit 50`.
+- **`gorgias-pp-cli profile save <name>`** — Capture the current non-default flags as a named profile reusable via `--profile <name>`. Cuts repetition for agents that always reach for `--agent --view-id 123456789 --limit 50`.
 
 ### Code-orchestration MCP
 
@@ -224,7 +230,24 @@ claude mcp add gorgias gorgias-pp-mcp \
 
 ## Claude Desktop
 
-This CLI ships an [MCPB](https://github.com/modelcontextprotocol/mcpb) bundle — Claude Desktop's standard one-click format for MCP extensions. Download the `.mcpb` for your platform from the [latest release](https://github.com/chrisyoungcooks/gorgias-pp-cli/releases), double-click it, and Claude Desktop walks you through the install. Pre-built bundles ship for macOS Apple Silicon and Windows; other platforms use the manual config in [MCP.md](./MCP.md).
+Install `gorgias-pp-mcp` (see [Install](#install)), then add it to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "gorgias": {
+      "command": "gorgias-pp-mcp",
+      "env": {
+        "GORGIAS_USERNAME": "<your-email>",
+        "GORGIAS_API_KEY": "<your-api-key>",
+        "GORGIAS_BASE_URL": "https://<tenant>.gorgias.com/api"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The full config schema (including the `op run`-wrapper pattern for 1Password-managed secrets) is in [MCP.md](./MCP.md).
 
 ## Cursor
 

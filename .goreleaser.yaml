@@ -1,16 +1,28 @@
 version: 2
 project_name: gorgias-pp-cli
 changelog:
-  disable: true
-# Sync manifest.json's "version" field with the release tag before any
-# archive is built so the MCPB bundle never advertises a version that
-# differs from the binary inside it. {{ .Version }} is the goreleaser
-# tag (or snapshot). Implemented as a shell script in scripts/ to avoid
-# embedding shell quoting inside a YAML scalar (where the unescaped
-# colons would break the parser).
-before:
-  hooks:
-    - bash scripts/sync-manifest-version.sh {{ .Version }}
+  # Use goreleaser's git-log-driven changelog. The default groups commits
+  # under "Changelog" in the release body; without this, release bodies
+  # are empty whitespace and readers can't tell tags apart.
+  use: git
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Docs
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Other
+      order: 999
+  filters:
+    exclude:
+      - '^chore:'
+      - '^test:'
+      - '^Merge'
 builds:
   - id: gorgias-pp-cli
     main: ./cmd/gorgias-pp-cli

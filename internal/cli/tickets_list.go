@@ -31,7 +31,7 @@ func newTicketsListCmd(flags *rootFlags) *cobra.Command {
 			"no direct filter for status/priority/channel/tag — Gorgias requires a view for\n" +
 			"those. Pagination uses `cursor` + `limit` (max 100).",
 		Example: `  gorgias-pp-cli tickets list
-  gorgias-pp-cli tickets list --view-id 626049 --limit 50
+  gorgias-pp-cli tickets list --view-id 123456789 --limit 50
   gorgias-pp-cli tickets list --customer-id 123456789`,
 		Annotations: map[string]string{"pp:endpoint": "tickets.list", "pp:method": "GET", "pp:path": "/tickets", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

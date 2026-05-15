@@ -58,11 +58,11 @@ func TestClient_GET_QueryParams(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(t, srv)
-	_, err := c.Get("/tickets", map[string]string{"limit": "5", "view_id": "626049"})
+	_, err := c.Get("/tickets", map[string]string{"limit": "5", "view_id": "123456789"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(gotURL, "limit=5") || !strings.Contains(gotURL, "view_id=626049") {
+	if !strings.Contains(gotURL, "limit=5") || !strings.Contains(gotURL, "view_id=123456789") {
 		t.Errorf("query params dropped: %s", gotURL)
 	}
 }

@@ -16,7 +16,7 @@ import (
 
 // Profile is a named set of flag values saved for reuse across invocations.
 // Useful when an agent or human always reaches for the same flag combination —
-// e.g. `--json --agent --view-id 626049 --limit 50` — and wants to replay
+// e.g. `--json --agent --view-id 123456789 --limit 50` — and wants to replay
 // it via `--profile open-tickets` instead of retyping every call.
 type Profile struct {
 	Name        string            `json:"name"`
@@ -172,7 +172,7 @@ func newProfileSaveCmd(flags *rootFlags) *cobra.Command {
 		Use:   "save <name> [--<flag> <value> ...]",
 		Short: "Save the current invocation's non-default flags as a named profile",
 		Example: `  gorgias-pp-cli profile save my-defaults --json --compact
-  gorgias-pp-cli profile save open-tickets --view-id 626049 --limit 50`,
+  gorgias-pp-cli profile save open-tickets --view-id 123456789 --limit 50`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]

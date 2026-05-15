@@ -12,7 +12,8 @@
   "spec_format": "internal",
   "spec_checksum": "sha256:4015cd842fcf1ee9229d9ad035208c4fa80ece8182b3f87320bbaf7a4532303c",
   "mcp_binary": "gorgias-pp-mcp",
-  "mcp_tool_count": 108,
+  "mcp_endpoint_count": 108,
+  "mcp_tool_count": 15,
   "mcp_ready": "full",
   "api_version": "0.1.0",
   "auth_type": "api_key",
@@ -39,7 +40,7 @@
     {
       "name": "Code-orchestration MCP surface",
       "command": "gorgias-pp-mcp --transport http --addr :7777",
-      "description": "108 Gorgias endpoints exposed via 18 MCP tools (~1K tokens of descriptions) instead of one tool per endpoint. Agents reach the full surface through gorgias_search + gorgias_execute, not a 108-tool catalog."
+      "description": "108 Gorgias endpoints reachable through a small fixed set of MCP tools (~1K tokens of descriptions) instead of one tool per endpoint. Agents reach the full surface through gorgias_search + gorgias_execute, not a 108-tool catalog. Live tool count is reported by the `context` tool."
     },
     {
       "name": "Doctor with live credential verification",

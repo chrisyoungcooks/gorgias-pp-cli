@@ -3,9 +3,8 @@
 `gorgias-pp-mcp` is the sibling MCP server to the `gorgias-pp-cli` binary.
 This document covers the protocol-level behavior most readers don't need:
 the code-orchestration gateway design, raw JSON-RPC examples, transport
-selection, and manual config for hosts that can't auto-install the MCPB
-bundle. The main [README](./README.md) summarizes the same concepts in
-one paragraph.
+selection, and host wiring patterns. The main [README](./README.md)
+summarizes the same concepts in one paragraph.
 
 ## Code-orchestration gateway
 
@@ -76,12 +75,10 @@ The HTTP server speaks the Model Context Protocol over `POST /mcp`
 matches how container-hosted agents typically pass configuration
 without a flag.
 
-## Manual Claude Desktop config
+## Claude Desktop config
 
-If you can't use the MCPB bundle (older Claude Desktop, unsupported
-platform), install the MCP binary directly and configure it manually.
-Add to your Claude Desktop config
-(`~/Library/Application Support/Claude/claude_desktop_config.json`):
+Install the MCP binary (see [Install](./README.md#install)) and add it
+to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
