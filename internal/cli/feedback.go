@@ -144,7 +144,7 @@ func newFeedbackCmd(flags *rootFlags) *cobra.Command {
 			entry := FeedbackEntry{
 				Text:      text,
 				CLI:       "gorgias-pp-cli",
-				Version:   version,
+				Version:   Version(),
 				AgentID:   os.Getenv("AGENT_ID"),
 				Timestamp: time.Now().UTC(),
 			}

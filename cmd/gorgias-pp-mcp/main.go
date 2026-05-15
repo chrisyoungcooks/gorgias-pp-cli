@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/chrisyoungcooks/gorgias-pp-cli/internal/client"
@@ -24,8 +25,25 @@ const (
 )
 
 // version is stamped at link time via `-X main.version=<release>` in
-// .goreleaser.yaml. Defaults to a dev marker for local builds.
+// .goreleaser.yaml. The "0.0.0-dev" default is overridden in three ways,
+// in priority order: ldflag (goreleaser builds), module version from
+// BuildInfo (`go install <module>@vX.Y.Z` builds), or this fallback
+// (local `go run` / `go build` from a working tree).
 var version = "0.0.0-dev"
+
+// resolveVersion mirrors the CLI's cli.Version() logic so both binaries
+// report the same value when installed via `go install ...@vX.Y.Z`.
+func resolveVersion() string {
+	if version != "0.0.0-dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if v := info.Main.Version; v != "" && v != "(devel)" {
+			return strings.TrimPrefix(v, "v")
+		}
+	}
+	return version
+}
 
 func main() {
 	transport := flag.String("transport", defaultTransport(), "MCP transport: stdio | http")
@@ -33,18 +51,20 @@ func main() {
 	showVersion := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
 
+	v := resolveVersion()
+
 	if *showVersion {
-		fmt.Printf("gorgias-pp-mcp %s\n", version)
+		fmt.Printf("gorgias-pp-mcp %s\n", v)
 		return
 	}
 
 	// Tag MCP-originated API calls with this binary's version so Gorgias's
 	// access logs can distinguish CLI traffic from MCP traffic.
-	client.SetVersion(version)
+	client.SetVersion(v)
 
 	s := server.NewMCPServer(
 		"Gorgias",
-		version,
+		v,
 		server.WithToolCapabilities(false),
 	)
 
