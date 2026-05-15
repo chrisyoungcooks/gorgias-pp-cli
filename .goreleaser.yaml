@@ -1,0 +1,65 @@
+version: 2
+project_name: gorgias-pp-cli
+changelog:
+  disable: true
+# Sync manifest.json's "version" field with the release tag before any
+# archive is built so the MCPB bundle never advertises a version that
+# differs from the binary inside it. {{ .Version }} is the goreleaser
+# tag (or snapshot). Implemented as a shell script in scripts/ to avoid
+# embedding shell quoting inside a YAML scalar (where the unescaped
+# colons would break the parser).
+before:
+  hooks:
+    - bash scripts/sync-manifest-version.sh {{ .Version }}
+builds:
+  - id: gorgias-pp-cli
+    main: ./cmd/gorgias-pp-cli
+    binary: gorgias-pp-cli
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/chrisyoungcooks/gorgias-pp-cli/internal/cli.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+  - id: gorgias-pp-mcp
+    main: ./cmd/gorgias-pp-mcp
+    binary: gorgias-pp-mcp
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+# Pin the GitHub release target explicitly. Without this, goreleaser infers
+# the owner from `origin`, which makes a mis-configured fork or accidental
+# `gh repo create` in the wrong org silently push artifacts to the wrong
+# place. The author handle is the source of truth for this repo.
+release:
+  github:
+    owner: chrisyoungcooks
+    name: gorgias-pp-cli
+homebrew_casks:
+  - name: gorgias-pp-cli
+    repository:
+      owner: chrisyoungcooks
+      name: homebrew-tap
+    homepage: "https://github.com/chrisyoungcooks/gorgias-pp-cli"
+    description: "Every Gorgias support workflow, agent-native, in one binary."
