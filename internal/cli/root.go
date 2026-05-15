@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -18,16 +19,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// version is wired in by the build (goreleaser ldflag -X main.version=...).
-// `0.0.0-dev` is the local-build default; on a released binary this is the
-// git tag with optional commit suffix. CLI and MCP binaries share the same
-// default to keep introspection envelopes coherent across the pair.
+// version is wired in by the build (goreleaser ldflag -X .../cli.version=...).
+// `0.0.0-dev` is the fallback when no ldflag is set AND we can't read a
+// module version from the binary's BuildInfo (the typical "running from
+// `go run` in a working tree" case). CLI and MCP binaries share the same
+// fallback to keep introspection envelopes coherent across the pair.
 var version = "0.0.0-dev"
 
-// Version returns the current build's version string so other packages
-// (notably internal/client for its User-Agent header) can read what main
-// wired in without importing the cli package's private state.
-func Version() string { return version }
+// Version returns the current build's version string. Resolution order:
+//
+//  1. The goreleaser-injected ldflag (a release tag like "0.1.0").
+//  2. The Go module version baked into the binary by `go install
+//     <module>@vX.Y.Z` — Go records the resolved version in
+//     `runtime/debug.ReadBuildInfo()`. This catches the case where a
+//     user installs via `go install ...@latest` and would otherwise see
+//     the literal "0.0.0-dev" default.
+//  3. The "0.0.0-dev" fallback (local builds from a working tree).
+func Version() string {
+	if version != "0.0.0-dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		// info.Main.Version is "(devel)" for `go run` / `go build` in a
+		// working tree and a real semver like "v0.1.0" for installs via
+		// `go install <module>@vX.Y.Z`. We only adopt the latter.
+		if v := info.Main.Version; v != "" && v != "(devel)" {
+			return strings.TrimPrefix(v, "v")
+		}
+	}
+	return version
+}
 
 type rootFlags struct {
 	asJSON        bool
@@ -205,7 +226,7 @@ func newRootCmd(flags *rootFlags) *cobra.Command {
 		// prints the error twice — once from Cobra, once from main.
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Version:       version,
+		Version:       Version(),
 	}
 	rootCmd.SetVersionTemplate("gorgias-pp-cli {{ .Version }}\n")
 
@@ -384,13 +405,14 @@ func newVersionCliCmd(flags *rootFlags) *cobra.Command {
 		Example: `  gorgias-pp-cli version
   gorgias-pp-cli version --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			v := Version()
 			if flags.asJSON {
 				return printJSONFiltered(cmd.OutOrStdout(), map[string]any{
 					"name":    "gorgias-pp-cli",
-					"version": version,
+					"version": v,
 				}, flags)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "gorgias-pp-cli %s\n", version)
+			fmt.Fprintf(cmd.OutOrStdout(), "gorgias-pp-cli %s\n", v)
 			return nil
 		},
 	}
