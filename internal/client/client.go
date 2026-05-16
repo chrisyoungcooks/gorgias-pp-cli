@@ -283,13 +283,18 @@ func (c *Client) do(method, path string, params map[string]string, body any, hea
 	}
 }
 
-// userAgent identifies the CLI to Gorgias's access logs so the maintainers
-// can see which clients are hitting their API. Version is wired in by main
-// via SetVersion(); falls back to the local default for un-versioned builds.
+// clientVersion holds the version string the User-Agent advertises.
+// main wires this via SetVersion() at startup so the header tracks the
+// same resolution chain (ldflag → BuildInfo → "0.0.0-dev" fallback) the
+// user sees via `gorgias-pp-cli version`. Both binaries' main packages
+// call SetVersion; tests and non-main callers can also drive it directly.
 var clientVersion = "0.0.0-dev"
 
-// SetVersion lets main wire the build version into the User-Agent. Optional —
-// callers who never call this get the default "0.0.0-dev" tag.
+// SetVersion is called by main with the resolved version string. Both
+// cmd/gorgias-pp-cli/main.go (via cli.Version()) and
+// cmd/gorgias-pp-mcp/main.go (via resolveVersion()) pass through the same
+// BuildInfo-aware path, so the User-Agent never carries "0.0.0-dev" on a
+// `go install <module>@vX.Y.Z` build.
 func SetVersion(v string) {
 	if v != "" {
 		clientVersion = v

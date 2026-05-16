@@ -257,7 +257,7 @@ func newTicketsUpdateCmd(flags *rootFlags) *cobra.Command {
 	cmd.Flags().StringVar(&bodyTags, "tags", "", "Tags of the ticket")
 	cmd.Flags().StringVar(&bodyTrashedDatetime, "trashed-datetime", "", "A datetime will move the ticket to the trash, `null` will move the ticket out of the trash")
 	cmd.Flags().StringVar(&bodyUpdatedDatetime, "updated-datetime", "", "When the ticket was lastly updated")
-	cmd.Flags().StringVar(&bodyVia, "via", "", "How the first message of the ticket has been received or sent from Gorgias (enum: aircall, api, chat, contact_form, email, facebook, facebook-mention, facebook-messenger — per spec.yaml; see https://developers.gorgias.com/reference/post_api-tickets for the live API enum)")
+	cmd.Flags().StringVar(&bodyVia, "via", "", "How the first message of the ticket has been received or sent from Gorgias (enum: aircall, api, chat, contact_form, email, facebook, facebook-mention, facebook-messenger — per spec-sources/gorgias-crowd.yaml; see https://developers.gorgias.com/reference/post_api-tickets for the live API enum)")
 	cmd.Flags().BoolVar(&stdinBody, "stdin", false, "Read request body as JSON from stdin")
 
 	return cmd

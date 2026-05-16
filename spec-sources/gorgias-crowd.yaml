@@ -35,7 +35,7 @@ mcp:
   addr: :7777
 resources:
   account:
-    description: Operations on account
+    description: Account-level settings and tenant metadata
     endpoints:
       settings-create:
         method: POST
@@ -132,7 +132,7 @@ resources:
           operation_id: update-account-setting
           doc_url: https://developers.gorgias.com/reference/update-account-setting
   custom-fields:
-    description: Operations on custom-fields
+    description: Define and manage custom fields on tickets and customers
     endpoints:
       create:
         method: POST
@@ -394,7 +394,7 @@ resources:
           operation_id: update-custom-fields
           doc_url: https://developers.gorgias.com/reference/update-custom-fields
   customers:
-    description: Operations on customers
+    description: Read and write Gorgias customer records (CRM core)
     endpoints:
       create:
         method: POST
@@ -799,7 +799,7 @@ resources:
           operation_id: merge-customers
           doc_url: https://developers.gorgias.com/reference/merge-customers
   events:
-    description: Operations on events
+    description: Audit log of who-changed-what across tickets, customers, settings
     endpoints:
       get:
         method: GET
@@ -830,7 +830,7 @@ resources:
           source_count: '1'
           source_tier: community-sdk
   integrations:
-    description: Operations on integrations
+    description: Install and configure third-party integrations (Shopify, SMS, social)
     endpoints:
       create:
         method: POST
@@ -988,7 +988,7 @@ resources:
           operation_id: update-integration
           doc_url: https://developers.gorgias.com/reference/update-integration
   gorgias-jobs:
-    description: Operations on jobs
+    description: Schedule and track async Gorgias jobs (bulk exports, macro applies)
     endpoints:
       create:
         method: POST
@@ -1136,7 +1136,7 @@ resources:
           operation_id: update-job
           doc_url: https://developers.gorgias.com/reference/update-job
   macros:
-    description: Operations on macros
+    description: Reusable canned-reply templates with variables and actions
     endpoints:
       create:
         method: POST
@@ -1356,7 +1356,7 @@ resources:
           operation_id: bulk-unarchive-macros
           doc_url: https://developers.gorgias.com/reference/bulk-unarchive-macros
   messages:
-    description: Operations on messages
+    description: Read messages across tickets (account-wide listing)
     endpoints:
       list:
         method: GET
@@ -1373,7 +1373,7 @@ resources:
           source_count: '1'
           source_tier: community-sdk
   phone:
-    description: Operations on voice-calls
+    description: Voice calls, call events, and recorded audio
     endpoints:
       call-recordings-delete:
         method: DELETE
@@ -1480,7 +1480,7 @@ resources:
           source_count: '1'
           source_tier: community-sdk
   pickups:
-    description: Operations on pickups
+    description: Delete pickup logistics records (single destructive endpoint)
     endpoints:
       delete:
         method: DELETE
@@ -1497,7 +1497,7 @@ resources:
           source_count: '1'
           source_tier: community-sdk
   reporting:
-    description: Operations on stats
+    description: Run a Gorgias analytics query (POST /reporting/stats)
     endpoints:
       stats:
         method: POST
@@ -1538,7 +1538,7 @@ resources:
           schema_source: openapi-1.5.1
           body_shape: object
   rules:
-    description: Operations on rules
+    description: Automation rules: route, tag, auto-reply, escalate on incoming tickets
     endpoints:
       set-priorities:
         method: POST
@@ -1766,7 +1766,7 @@ resources:
           operation_id: update-rule
           doc_url: https://developers.gorgias.com/reference/update-rule
   satisfaction-surveys:
-    description: Operations on satisfaction-surveys
+    description: CSAT survey definitions and customer ratings/comments
     endpoints:
       create:
         method: POST
@@ -2016,7 +2016,7 @@ resources:
           operation_id: search
           doc_url: https://developers.gorgias.com/reference/search
   tags:
-    description: Operations on tags
+    description: Ticket tags — the labels that drive routing rules and reporting
     endpoints:
       create:
         method: POST
@@ -2195,7 +2195,7 @@ resources:
           operation_id: update-tag
           doc_url: https://developers.gorgias.com/reference/update-tag
   teams:
-    description: Operations on teams
+    description: Agent teams: how tickets are grouped and routed for assignment
     endpoints:
       create:
         method: POST
@@ -2336,7 +2336,7 @@ resources:
           operation_id: update-team
           doc_url: https://developers.gorgias.com/reference/update-team
   tickets:
-    description: Operations on tickets
+    description: Read and write Gorgias tickets, messages, and tag assignments
     endpoints:
       messages-create:
         method: POST
@@ -3395,7 +3395,7 @@ resources:
           operation_id: update-ticket
           doc_url: https://developers.gorgias.com/reference/update-ticket
   users:
-    description: Operations on users
+    description: Agents and admin users on the Gorgias account
     endpoints:
       create:
         method: POST
@@ -3649,7 +3649,7 @@ resources:
           operation_id: update-user
           doc_url: https://developers.gorgias.com/reference/update-user
   views:
-    description: Operations on items
+    description: Saved Gorgias inbox views (named filters used by agents)
     endpoints:
       create:
         method: POST
@@ -3986,7 +3986,7 @@ resources:
           operation_id: update-view
           doc_url: https://developers.gorgias.com/reference/update-view
   widgets:
-    description: Operations on widgets
+    description: Configure on-site chat/contact widget instances
     endpoints:
       create:
         method: POST

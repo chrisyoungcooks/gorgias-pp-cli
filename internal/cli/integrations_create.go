@@ -144,7 +144,7 @@ func newIntegrationsCreateCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&bodyName, "name", "", "Name of the integration. Usually the email address, Facebook page name, etc. (example: My HTTP integration)")
-	cmd.Flags().StringVar(&bodyType, "type", "", "Type of integration. spec.yaml lists only 'http'; the live Gorgias API also supports shopify, magento, instagram, facebook, sms, and more — see the Gorgias integrations docs for the full enum.")
+	cmd.Flags().StringVar(&bodyType, "type", "", "Type of integration. spec-sources/gorgias-crowd.yaml lists only 'http'; the live Gorgias API also supports shopify, magento, instagram, facebook, sms, and more — see the Gorgias integrations docs for the full enum.")
 	cmd.Flags().StringVar(&bodyDeactivatedDatetime, "deactivated-datetime", "", "When the integration was deactivated.")
 	cmd.Flags().StringVar(&bodyDescription, "description", "", "Description about the integration.")
 	cmd.Flags().StringVar(&bodyHttp, "http", "", "Only available for HTTP integrations, defines the configuration of the integration.")
