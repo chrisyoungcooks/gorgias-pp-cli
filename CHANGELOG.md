@@ -5,6 +5,66 @@ follows [Keep a Changelog](https://keepachangelog.com/) with one section
 per released tag. Each entry summarizes what a user would notice on
 upgrade.
 
+## v0.1.6 — 2026-05-15
+
+### Fixed
+
+- `gorgias-pp-cli api <iface> --json` for promoted single-endpoint
+  resources (`messages`, `pickups`, `reporting`, `ticket-search`) was
+  returning `methods: []`. Programmatic summation across all interfaces
+  totaled 104 instead of the documented 108. Each promoted leaf now
+  synthesizes a single self-method derived from its `pp:endpoint`
+  annotation (e.g. `messages` → `list`), so the JSON count matches the
+  headline claim.
+
+## v0.1.5 — 2026-05-15
+
+### Fixed
+
+- MCP `context` tool reported `archetype: "project-management"` — a
+  leftover from the generator template. Set to `"customer-support"`
+  to match every other doc surface.
+- README troubleshooting paragraph said the MCP server "only shows
+  `gorgias_search`/`gorgias_execute`/`context`/`sql`/`search`" — five
+  tools. Live `tools/list` returns fifteen. Rewrote to enumerate all
+  fifteen and explain the gateway-vs-typed split.
+- `gorgias-pp-cli api` browser listed 104 endpoints across 16 resource
+  groups because the four promoted single-endpoint commands
+  (`messages`, `pickups`, `reporting`, `ticket-search`) were excluded
+  from the hidden-only filter. Added a `promotedLeafResources`
+  allowlist so the surface count matches the documented 108.
+- "~1K context tokens vs ~25K for one-tool-per-endpoint" claim was
+  true for description text alone but ignored JSON schemas. Reworded
+  every site (README:10, README:94, CURSOR.md:88, SKILL.md:28,
+  MCP.md:27, .printing-press.json:43) with measured numbers (~1K
+  descriptions + ~7K schemas = ~9K total; ~5× that for
+  one-tool-per-endpoint).
+
+## v0.1.4 — 2026-05-15
+
+### Fixed
+
+- `spec.yaml` at the repo root was byte-identical to
+  `spec-sources/gorgias-crowd.yaml` (149KB of duplicate provenance).
+  Removed; the three flag descriptions that named it now point at the
+  canonical `spec-sources/` path.
+- Scrubbed the 19 "Operations on `<resource>`" boilerplate descriptions
+  from `SKILL.md` (resource group headers) and
+  `spec-sources/gorgias-crowd.yaml` by mirroring the curated parent-
+  command Shorts already in `internal/cli/*.go`.
+- Refreshed `.printing-press.json`'s `spec_checksum` to track the
+  spec edit.
+- Clarified the relationship between `internal/client/client.go`'s
+  `clientVersion` / `SetVersion` and `cli.Version()` /
+  `resolveVersion()` so the User-Agent and the CLI's reported version
+  always come from the same resolution chain.
+
+### Added
+
+- `CONTRIBUTING.md`, `SECURITY.md`, and `.github/ISSUE_TEMPLATE/`
+  (bug_report.md + feature_request.md). Standard polish to match the
+  Linear and allrecipes PP CLI gallery entries.
+
 ## v0.1.3 — 2026-05-15
 
 ### Fixed
