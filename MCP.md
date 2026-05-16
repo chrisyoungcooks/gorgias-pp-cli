@@ -24,12 +24,18 @@ The gateway pattern, end to end:
 3. The agent calls `gorgias_execute` with the chosen `endpoint_id` and
    a params map.
 
-This costs ~1K tokens of tool descriptions in the host's working set,
-instead of ~25K for one-tool-per-endpoint. Local-mirror tools (`sync`,
-`search`, `sql`, `analytics`, `orphans`, `stale`, `load`, `export`,
-`tail`, `import`) are exposed as typed tools alongside the gateway —
-they sit on a different surface (the local SQLite mirror) so they get
-their own tool entries rather than routing through `gorgias_execute`.
+Measured: a `tools/list` response against the live server is ~36 KB of
+JSON across 15 tools — ~1K tokens of pure description text and ~7K
+tokens of JSON schemas (~9K total). For comparison, exposing each of
+the 108 endpoints as a typed tool would push the working set past
+~45K tokens of tool-surface metadata.
+
+Local-mirror tools (`sync`, `search`, `sql`, `analytics`, `orphans`,
+`stale`, `load`, `export`, `tail`, `import`) and compound workflows
+(`workflow_archive`, `workflow_status`) are exposed as typed tools
+alongside the gateway — they sit on a different surface (the local
+SQLite mirror or compound API sequences) so they get their own tool
+entries rather than routing through `gorgias_execute`.
 
 ## Raw JSON-RPC
 

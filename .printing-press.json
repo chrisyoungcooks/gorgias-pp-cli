@@ -40,7 +40,7 @@
     {
       "name": "Code-orchestration MCP surface",
       "command": "gorgias-pp-mcp --transport http --addr :7777",
-      "description": "108 Gorgias endpoints reachable through a small fixed set of MCP tools (~1K tokens of descriptions) instead of one tool per endpoint. Agents reach the full surface through gorgias_search + gorgias_execute, not a 108-tool catalog. Live tool count is reported by the `context` tool."
+      "description": "108 Gorgias endpoints reachable through a small fixed set of MCP tools — 15 typed tools total, ~9K context tokens for a full tools/list response (~1K of descriptions, ~7K of JSON schemas). Agents reach the full surface through gorgias_search + gorgias_execute, not a 108-tool catalog. Live tool count is reported by the `context` tool."
     },
     {
       "name": "Doctor with live credential verification",

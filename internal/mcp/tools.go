@@ -236,7 +236,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 	ctx := map[string]any{
 		"api":         "gorgias",
 		"description": "Every Gorgias support workflow, agent-native, in one binary.",
-		"archetype":   "project-management",
+		"archetype":   "customer-support",
 		// tool_count reflects what the MCP server actually exposed at
 		// registration time. The full ~108-endpoint surface is reachable
 		// from the orchestration gateway, not as 108 separate tools.
