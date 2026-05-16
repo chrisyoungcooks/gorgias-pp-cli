@@ -25,7 +25,7 @@ go install github.com/chrisyoungcooks/gorgias-pp-cli/cmd/gorgias-pp-mcp@latest
 
 Requires Go 1.26.3 or newer. Verify with `gorgias-pp-cli --version`. Ensure `$GOPATH/bin` (or `$HOME/go/bin`) is on `$PATH`. If `--version` reports "command not found", the install step did not put the binary on `$PATH`. Do not proceed with skill commands until verification succeeds.
 
-A token-efficient CLI for the Gorgias customer support API with a sibling MCP server. Covers 108 endpoints across tickets, customers, messages, macros, tags, teams, integrations, events, rules, satisfaction surveys, voice calls, custom fields, and views. Built for AI agents first: JSON output, structured doctor checks, local SQLite mirror, and code-orchestration MCP that fits the full surface in ~1K tokens of context.
+A token-efficient CLI for the Gorgias customer support API with a sibling MCP server. Covers 108 endpoints across tickets, customers, messages, macros, tags, teams, integrations, events, rules, satisfaction surveys, voice calls, custom fields, and views. Built for AI agents first: JSON output, structured doctor checks, local SQLite mirror, and code-orchestration MCP — 15 tools (~9K tokens measured for `tools/list`) cover the full 108-endpoint surface via the `gorgias_search` + `gorgias_execute` gateway.
 
 ## When to Use This CLI
 

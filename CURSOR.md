@@ -85,11 +85,13 @@ Example Cursor prompts:
 
 ## Token budget
 
-Code-orchestration mode keeps the MCP tool descriptions at ~1K tokens
-regardless of API size. The full 108-endpoint surface is reachable via
-`gorgias_execute`. This is the same context cost as a 5-tool MCP server,
-even though Gorgias has 108 endpoints — important if you're running
-Cursor with multiple MCP servers active.
+The 15-tool MCP surface measures ~1K tokens of pure description text
+and ~7K tokens of JSON schemas (~9K total in a live `tools/list`
+response), regardless of the underlying 108-endpoint API size. The
+gateway pattern (`gorgias_search` → `gorgias_execute`) means the full
+Gorgias surface is reachable without each endpoint costing tokens for
+its own typed tool — relevant if you're running Cursor with multiple
+MCP servers active.
 
 ## Offline / disconnected usage
 

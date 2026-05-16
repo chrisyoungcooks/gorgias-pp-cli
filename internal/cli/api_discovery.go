@@ -10,6 +10,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// promotedLeafResources lists the root-level visible commands that map to a
+// single Gorgias endpoint each. They're not hidden parent groups (which is
+// the api browser's normal filter), so they need explicit inclusion or the
+// browser's count drifts below the 108-endpoint claim. Reference: counted
+// against codeOrchEndpoints in internal/mcp/code_orch.go.
+var promotedLeafResources = map[string]struct{}{
+	"messages":      {}, // messages.list
+	"pickups":       {}, // pickups.delete
+	"reporting":     {}, // reporting.stats
+	"ticket-search": {}, // ticket-search.query
+}
+
 func newAPICmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "api [interface]",
@@ -25,34 +37,41 @@ func newAPICmd(flags *rootFlags) *cobra.Command {
 
 			if len(args) > 0 {
 				target := strings.ToLower(args[0])
+				_, isPromoted := promotedLeafResources[target]
 				for _, child := range root.Commands() {
-					if child.Hidden && strings.ToLower(child.Name()) == target {
-						methods := child.Commands()
-						// JSON envelope: {interface, short, methods: [{name, short}, ...]}.
-						if flags.asJSON {
-							methodList := make([]map[string]any, 0, len(methods))
-							for _, method := range methods {
-								methodList = append(methodList, map[string]any{
-									"name":  method.Name(),
-									"short": method.Short,
-								})
-							}
-							return printJSONFiltered(cmd.OutOrStdout(), map[string]any{
-								"interface": child.Name(),
-								"short":     child.Short,
-								"methods":   methodList,
-							}, flags)
-						}
-						if len(methods) == 0 {
-							return child.Help()
-						}
-						fmt.Fprintf(cmd.OutOrStdout(), "%s — %s\n\nMethods:\n", child.Name(), child.Short)
-						for _, method := range methods {
-							fmt.Fprintf(cmd.OutOrStdout(), "  %-50s %s\n", child.Name()+" "+method.Name(), method.Short)
-						}
-						fmt.Fprintf(cmd.OutOrStdout(), "\nUse '%s-pp-cli %s <method> --help' for details.\n", "gorgias", child.Name())
-						return nil
+					if strings.ToLower(child.Name()) != target {
+						continue
 					}
+					if !child.Hidden && !isPromoted {
+						continue
+					}
+					methods := child.Commands()
+					// JSON envelope: {interface, short, methods: [{name, short}, ...]}.
+					// Promoted leaves have no sub-methods; methods stays empty
+					// and the caller can fall back to `--help` for flag details.
+					if flags.asJSON {
+						methodList := make([]map[string]any, 0, len(methods))
+						for _, method := range methods {
+							methodList = append(methodList, map[string]any{
+								"name":  method.Name(),
+								"short": method.Short,
+							})
+						}
+						return printJSONFiltered(cmd.OutOrStdout(), map[string]any{
+							"interface": child.Name(),
+							"short":     child.Short,
+							"methods":   methodList,
+						}, flags)
+					}
+					if len(methods) == 0 {
+						return child.Help()
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "%s — %s\n\nMethods:\n", child.Name(), child.Short)
+					for _, method := range methods {
+						fmt.Fprintf(cmd.OutOrStdout(), "  %-50s %s\n", child.Name()+" "+method.Name(), method.Short)
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "\nUse '%s-pp-cli %s <method> --help' for details.\n", "gorgias", child.Name())
+					return nil
 				}
 				return fmt.Errorf("interface %q not found. Run '%s-pp-cli api' to list all interfaces", args[0], "gorgias")
 			}
@@ -67,6 +86,19 @@ func newAPICmd(flags *rootFlags) *cobra.Command {
 			var ifaces []ifaceEntry
 			for _, child := range root.Commands() {
 				if child.Hidden {
+					ifaces = append(ifaces, ifaceEntry{Name: child.Name(), Short: child.Short})
+				}
+			}
+			// Promoted single-endpoint resources sit as visible leaf commands
+			// at the root (messages / pickups / reporting / ticket-search) so
+			// the `api` browser would otherwise hide them. Include them by
+			// name — they're each one endpoint, so the methods view is just
+			// the leaf command itself.
+			for _, child := range root.Commands() {
+				if child.Hidden {
+					continue
+				}
+				if _, ok := promotedLeafResources[child.Name()]; ok {
 					ifaces = append(ifaces, ifaceEntry{Name: child.Name(), Short: child.Short})
 				}
 			}

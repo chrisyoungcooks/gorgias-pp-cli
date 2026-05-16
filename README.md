@@ -7,7 +7,7 @@
 
 The helpdesk for e-commerce support teams. This CLI gives you (or an AI agent) full control over a Gorgias tenant from a single binary: list, create, update, and reply to tickets via `tickets list / get / update / messages-create`; sweep stuck work with `stale` and `orphans`; query locally with `sync` + `sql` for SQL-grade analytics the live API doesn't expose; full-text search across synced data with `search`; and a sibling `gorgias-pp-mcp` server that lets Claude Desktop, Cursor, or Claude Code drive the surface natively.
 
-The MCP server runs in code-orchestration mode: its full-API description costs ~1K context tokens, not ~25K for one-tool-per-endpoint. See [MCP.md](./MCP.md) for the protocol-level design.
+The MCP server runs in code-orchestration mode: ~15 tools (a `gorgias_search` + `gorgias_execute` gateway over all 108 endpoints, plus typed local-mirror surfaces). Measured tool descriptions + JSON schemas together total ~9K tokens for the full surface — vs. roughly 5× that if every endpoint shipped its own typed tool. See [MCP.md](./MCP.md) for the protocol-level design.
 
 Learn more at [Gorgias](https://www.gorgias.com).
 
@@ -91,7 +91,7 @@ These capabilities are designed for agent-driven work and don't exist in the Gor
 
 ### Code-orchestration MCP
 
-The sibling `gorgias-pp-mcp` exposes two gateway tools (`gorgias_search` + `gorgias_execute`) covering all 108 endpoints, plus typed tools for the local-mirror capabilities (`sync`, `search`, `sql`, `stale`, `orphans`, `load`, `tail`, `export`, `import`). The full description fits in ~1K context tokens instead of ~25K for one-tool-per-endpoint. See [MCP.md](./MCP.md).
+The sibling `gorgias-pp-mcp` exposes two gateway tools (`gorgias_search` + `gorgias_execute`) covering all 108 endpoints, plus typed tools for the local-mirror capabilities (`sync`, `search`, `sql`, `stale`, `orphans`, `load`, `tail`, `export`, `import`) and the compound workflows. The full tool surface (description + JSON schemas) measures ~9K context tokens, vs. roughly 5× that if every endpoint shipped its own typed tool. See [MCP.md](./MCP.md).
 
 ## Cookbook
 
@@ -271,7 +271,7 @@ XDG paths are honored on Unix; on Windows the CLI falls back to `os.UserConfigDi
 
 **`404 Not Found` on every command** — `GORGIAS_BASE_URL` isn't picked up, or points at the wrong tenant. The doctor warns when the slug looks like `app` or `your-company`.
 
-**MCP server only shows `gorgias_search`/`gorgias_execute`/`context`/`sql`/`search`** — that's the code-orchestration surface, by design. The full 108-endpoint surface is reachable through `gorgias_execute`.
+**MCP server exposes ~15 tools but I expected one per endpoint** — by design. Two of those tools (`gorgias_search` + `gorgias_execute`) are the gateway that reaches every Gorgias endpoint; the rest (`context`, `search`, `sql`, `sync`, `analytics`, `orphans`, `stale`, `load`, `tail`, `export`, `import`, `workflow_archive`, `workflow_status`) are typed surfaces for local-mirror queries and compound workflows. Call `context` for the live count + manifest.
 
 **`search <query>` returns nothing live** — Gorgias's `/search` indexes customers/agents/tags/teams/integrations, not tickets or messages. For ticket text search, sync first: `gorgias-pp-cli sync --resources tickets --since 30d && gorgias-pp-cli search <query> --data-source local`.
 
