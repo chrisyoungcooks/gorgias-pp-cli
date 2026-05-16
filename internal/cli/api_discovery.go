@@ -22,6 +22,21 @@ var promotedLeafResources = map[string]struct{}{
 	"ticket-search": {}, // ticket-search.query
 }
 
+// promotedMethodName returns the synthetic method name for a promoted leaf
+// command, derived from its `pp:endpoint` annotation (e.g. "messages.list"
+// → "list"). Falls back to the cobra command name itself when the
+// annotation is missing — the count is still 1, just less informative.
+func promotedMethodName(cmd *cobra.Command) string {
+	if cmd.Annotations != nil {
+		if epID := cmd.Annotations["pp:endpoint"]; epID != "" {
+			if idx := strings.Index(epID, "."); idx >= 0 {
+				return epID[idx+1:]
+			}
+		}
+	}
+	return cmd.Name()
+}
+
 func newAPICmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "api [interface]",
@@ -46,9 +61,32 @@ func newAPICmd(flags *rootFlags) *cobra.Command {
 						continue
 					}
 					methods := child.Commands()
+					// Promoted single-endpoint resources have no sub-commands
+					// in cobra (they ARE the endpoint). For the `api` browser
+					// to surface them as countable methods — keeping the
+					// per-resource method tally consistent with the headline
+					// 108-endpoint claim — synthesize a single self-method.
+					// The method name is derived from `pp:endpoint` (`x.y` →
+					// "y") so a reader can map `messages list` etc. back to
+					// the spec.
+					if isPromoted && len(methods) == 0 {
+						promotedMethod := promotedMethodName(child)
+						if flags.asJSON {
+							return printJSONFiltered(cmd.OutOrStdout(), map[string]any{
+								"interface": child.Name(),
+								"short":     child.Short,
+								"methods": []map[string]any{{
+									"name":  promotedMethod,
+									"short": child.Short,
+								}},
+							}, flags)
+						}
+						fmt.Fprintf(cmd.OutOrStdout(), "%s — %s\n\nMethods:\n", child.Name(), child.Short)
+						fmt.Fprintf(cmd.OutOrStdout(), "  %-50s %s\n", child.Name()+" "+promotedMethod, child.Short)
+						fmt.Fprintf(cmd.OutOrStdout(), "\nUse '%s-pp-cli %s --help' for details.\n", "gorgias", child.Name())
+						return nil
+					}
 					// JSON envelope: {interface, short, methods: [{name, short}, ...]}.
-					// Promoted leaves have no sub-methods; methods stays empty
-					// and the caller can fall back to `--help` for flag details.
 					if flags.asJSON {
 						methodList := make([]map[string]any, 0, len(methods))
 						for _, method := range methods {
