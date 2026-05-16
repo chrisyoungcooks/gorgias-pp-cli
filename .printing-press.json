@@ -10,7 +10,7 @@
   "printer_name": "Chris Young",
   "spec_path": "spec-sources/gorgias-crowd.yaml",
   "spec_format": "internal",
-  "spec_checksum": "sha256:4015cd842fcf1ee9229d9ad035208c4fa80ece8182b3f87320bbaf7a4532303c",
+  "spec_checksum": "sha256:d438fc396513d91b765cb2a7f72556c18900ea6d51e702a71167608675e02d6d",
   "mcp_binary": "gorgias-pp-mcp",
   "mcp_endpoint_count": 108,
   "mcp_tool_count": 15,
