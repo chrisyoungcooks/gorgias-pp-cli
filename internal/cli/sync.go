@@ -58,7 +58,9 @@ func newSyncCmd(flags *rootFlags) *cobra.Command {
 			"backfill conversation bodies alongside the parent records.\n\n" +
 			"Incremental by default: each resource records a checkpoint cursor in the DB and the\n" +
 			"next sync resumes from there. `--full` clears the cursor and resyncs from the top.\n" +
-			"`--since 7d` constrains the window when the API supports a since/created_after filter.\n" +
+			"`--since 7d` constrains the window when the API supports a since/created_after filter;\n" +
+			"tickets use documented updated_datetime ordering plus a local cutoff because Gorgias\n" +
+			"does not expose a ticket since query parameter.\n" +
 			"`--latest-only` caps each resource at its first page (useful for keeping the head warm\n" +
 			"without a historical backfill).\n\n" +
 			"Tuning: `--concurrency` raises worker count for resources that paginate independently;\n" +
@@ -360,12 +362,16 @@ func syncResource(c interface {
 	if effectiveSince == "" && !lastSynced.IsZero() && !full {
 		effectiveSince = lastSynced.Format(time.RFC3339)
 	}
+	localSince, localSinceActive, err := syncResourceLocalSinceFilter(resource, effectiveSince, sinceParam)
+	if err != nil {
+		return syncResult{Resource: resource, Err: err, Duration: time.Since(started)}
+	}
 	// Resources whose list endpoint declares no temporal-filter parameter
 	// fall back to plain pagination — sending a synthetic since=... would
 	// reach the API as an unknown query param and (for strict APIs like
 	// Notion) fail the whole resource with a 400. Warn once per resource
 	// when the user expected incremental behavior.
-	if effectiveSince != "" && sinceParam == "" {
+	if effectiveSince != "" && sinceParam == "" && !localSinceActive {
 		if humanFriendly {
 			fmt.Fprintf(os.Stderr, "  %s: incremental sync ignored (endpoint declares no temporal filter; falling back to full pagination)\n", resource)
 		} else {
@@ -375,6 +381,9 @@ func syncResource(c interface {
 	}
 
 	cursor := existingCursor
+	if effectiveSince != "" || full {
+		cursor = ""
+	}
 	pageSize := determinePaginationDefaults()
 
 	var progressCount int64
@@ -405,7 +414,11 @@ func syncResource(c interface {
 
 		// Set since filter
 		if effectiveSince != "" {
-			params[sinceParam] = effectiveSince
+			if sinceParam != "" {
+				params[sinceParam] = effectiveSince
+			} else if localSinceActive && localSince.OrderParam != "" {
+				params[localSince.OrderParam] = localSince.OrderValue
+			}
 		}
 
 		// Apply user-supplied --param / --resource-param overrides last so they
@@ -445,6 +458,16 @@ func syncResource(c interface {
 			}
 			totalCount++
 			break
+		}
+
+		pageItemCount := len(items)
+		localSinceHitCutoff := false
+		if localSinceActive {
+			canStopAtCutoff := params[localSince.OrderParam] == localSince.OrderValue
+			items, localSinceHitCutoff = filterSyncItemsByLocalSince(items, localSince, canStopAtCutoff)
+			if len(items) == 0 && localSinceHitCutoff {
+				break
+			}
 		}
 
 		// Batch upsert all items from this page. UpsertBatch returns
@@ -554,7 +577,7 @@ func syncResource(c interface {
 		lastNextCursor = nextCursor
 
 		// Determine if there are more pages
-		if !hasMore || len(items) < pageSize.limit || nextCursor == "" {
+		if localSinceHitCutoff || !hasMore || pageItemCount < pageSize.limit || nextCursor == "" {
 			break
 		}
 
@@ -611,6 +634,95 @@ func syncResourceSinceParam(resource string) string {
 	switch resource {
 	}
 	return ""
+}
+
+// localSinceFilter describes resources whose API has no documented since
+// query parameter but can be ordered newest-first and cut off locally.
+type localSinceFilter struct {
+	Cutoff     time.Time
+	OrderParam string
+	OrderValue string
+	Fields     []string
+}
+
+func syncResourceLocalSinceFilter(resource, effectiveSince, sinceParam string) (localSinceFilter, bool, error) {
+	if effectiveSince == "" || sinceParam != "" {
+		return localSinceFilter{}, false, nil
+	}
+	var filter localSinceFilter
+	switch resource {
+	case "tickets":
+		filter = localSinceFilter{
+			OrderParam: "order_by",
+			OrderValue: "updated_datetime:desc",
+			Fields:     []string{"updated_datetime", "created_datetime"},
+		}
+	default:
+		return localSinceFilter{}, false, nil
+	}
+	cutoff, err := time.Parse(time.RFC3339, effectiveSince)
+	if err != nil {
+		return localSinceFilter{}, false, fmt.Errorf("parsing since timestamp %q: %w", effectiveSince, err)
+	}
+	filter.Cutoff = cutoff
+	return filter, true, nil
+}
+
+func filterSyncItemsByLocalSince(items []json.RawMessage, filter localSinceFilter, canStopAtCutoff bool) ([]json.RawMessage, bool) {
+	kept := make([]json.RawMessage, 0, len(items))
+	for _, item := range items {
+		itemTime, ok := syncItemTime(item, filter.Fields)
+		if !ok {
+			kept = append(kept, item)
+			continue
+		}
+		if itemTime.Before(filter.Cutoff) {
+			if canStopAtCutoff {
+				return kept, true
+			}
+			continue
+		}
+		kept = append(kept, item)
+	}
+	return kept, false
+}
+
+func syncItemTime(item json.RawMessage, fields []string) (time.Time, bool) {
+	var obj map[string]any
+	if err := json.Unmarshal(item, &obj); err != nil {
+		return time.Time{}, false
+	}
+	for _, field := range fields {
+		v := store.LookupFieldValue(obj, field)
+		if v == nil {
+			continue
+		}
+		t, ok := parseSyncItemTime(store.StringifyID(v))
+		if ok {
+			return t, true
+		}
+	}
+	return time.Time{}, false
+}
+
+func parseSyncItemTime(value string) (time.Time, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, false
+	}
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		"2006-01-02T15:04:05.999999",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05.999999",
+		"2006-01-02 15:04:05",
+	} {
+		t, err := time.Parse(layout, value)
+		if err == nil {
+			return t, true
+		}
+	}
+	return time.Time{}, false
 }
 
 // extractPageItems attempts to extract an array of items and pagination cursor from a response.

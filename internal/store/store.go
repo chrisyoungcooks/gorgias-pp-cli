@@ -657,16 +657,24 @@ func (s *Store) List(resourceType string, limit int) ([]json.RawMessage, error) 
 }
 
 func (s *Store) Search(query string, limit int) ([]json.RawMessage, error) {
+	return s.SearchResource("", query, limit)
+}
+
+// SearchResource runs an FTS5 search across the generic resources mirror,
+// optionally constrained to one resource_type. An empty resourceType searches
+// all synced resources.
+func (s *Store) SearchResource(resourceType, query string, limit int) ([]json.RawMessage, error) {
 	if limit <= 0 {
 		limit = 50
 	}
 	rows, err := s.db.Query(
 		`SELECT r.data FROM resources r
-		 JOIN resources_fts f ON r.id = f.id AND r.resource_type = f.resource_type
+		 JOIN resources_fts ON r.id = resources_fts.id AND r.resource_type = resources_fts.resource_type
 		 WHERE resources_fts MATCH ?
+		   AND (? = '' OR r.resource_type = ?)
 		 ORDER BY rank
 		 LIMIT ?`,
-		query, limit,
+		query, resourceType, resourceType, limit,
 	)
 	if err != nil {
 		return nil, err
