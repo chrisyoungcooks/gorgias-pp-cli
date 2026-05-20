@@ -127,8 +127,8 @@ func newSearchCmd(flags *rootFlags) *cobra.Command {
 				liveType = "customer_profile"
 			}
 			// Skip live search when the user asked for local-only OR is
-			// searching a type the live endpoint doesn't index (e.g. ticket).
-			liveSearchOK := liveType != "ticket" && liveType != "message"
+			// searching a type the live endpoint doesn't index (e.g. tickets).
+			liveSearchOK := !isLocalOnlySearchType(liveType)
 			if flags.dataSource != "local" && liveSearchOK {
 				c, err := flags.newClient()
 				if err != nil {
@@ -167,12 +167,9 @@ func newSearchCmd(flags *rootFlags) *cobra.Command {
 			var results []json.RawMessage
 			switch resourceType {
 			case "":
-				// Search all FTS-enabled tables individually to avoid duplicates.
-				seen := make(map[string]bool)
-				_ = seen // prevent unused error when no FTS tables exist
-			default:
-				// Unrecognized type — fall back to generic search
 				results, err = db.Search(query, limit)
+			default:
+				results, err = db.SearchResource(normalizeLocalSearchResourceType(resourceType), query, limit)
 			}
 			if err != nil {
 				return fmt.Errorf("search failed: %w", err)
@@ -193,6 +190,26 @@ func newSearchCmd(flags *rootFlags) *cobra.Command {
 	cmd.Flags().StringVar(&dbPath, "db", "", "Database path (default: ~/.local/share/gorgias-pp-cli/data.db)")
 
 	return cmd
+}
+
+func isLocalOnlySearchType(resourceType string) bool {
+	switch normalizeLocalSearchResourceType(resourceType) {
+	case "tickets", "messages":
+		return true
+	default:
+		return false
+	}
+}
+
+func normalizeLocalSearchResourceType(resourceType string) string {
+	switch strings.TrimSpace(strings.ToLower(resourceType)) {
+	case "ticket":
+		return "tickets"
+	case "message":
+		return "messages"
+	default:
+		return strings.TrimSpace(strings.ToLower(resourceType))
+	}
 }
 
 // outputSearchResults filters, counts, and outputs search results with provenance.
