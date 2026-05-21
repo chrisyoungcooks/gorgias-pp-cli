@@ -34,7 +34,7 @@ func (c *recordingSyncClient) RateLimit() float64 {
 	return 0
 }
 
-func TestSyncTicketsSinceUsesLocalCutoff(t *testing.T) {
+func TestSyncTicketsSinceSendsServerSideFilter(t *testing.T) {
 	db, err := store.Open(filepath.Join(t.TempDir(), "data.db"))
 	if err != nil {
 		t.Fatalf("open store: %v", err)
@@ -43,10 +43,8 @@ func TestSyncTicketsSinceUsesLocalCutoff(t *testing.T) {
 
 	client := &recordingSyncClient{pages: []json.RawMessage{json.RawMessage(`{
 		"data": [
-			{"id": 1, "updated_datetime": "2026-05-14T00:00:00Z", "subject": "fresh ticket"},
-			{"id": 2, "updated_datetime": "2026-05-12T00:00:00Z", "subject": "old ticket"}
-		],
-		"meta": {"next_cursor": "next"}
+			{"id": 1, "updated_datetime": "2026-05-14T00:00:00Z", "subject": "fresh ticket"}
+		]
 	}`)}}
 
 	res := syncResource(client, db, "tickets", "2026-05-13T00:00:00Z", false, 100, false, nil)
@@ -59,19 +57,11 @@ func TestSyncTicketsSinceUsesLocalCutoff(t *testing.T) {
 	if len(client.requests) != 1 {
 		t.Fatalf("request count = %d, want 1", len(client.requests))
 	}
-	if got := client.requests[0]["order_by"]; got != "updated_datetime:desc" {
-		t.Fatalf("order_by = %q, want updated_datetime:desc", got)
+	if got := client.requests[0]["updated_datetime__gte"]; got != "2026-05-13T00:00:00Z" {
+		t.Fatalf("updated_datetime__gte = %q, want 2026-05-13T00:00:00Z", got)
 	}
-
-	count, err := db.Count("tickets")
-	if err != nil {
-		t.Fatalf("count tickets: %v", err)
-	}
-	if count != 1 {
-		t.Fatalf("stored ticket count = %d, want 1", count)
-	}
-	if _, err := db.Get("tickets", "2"); err == nil {
-		t.Fatalf("old ticket was stored despite since cutoff")
+	if _, exists := client.requests[0]["order_by"]; exists {
+		t.Fatalf("order_by should not be sent when server-side since param is available")
 	}
 }
 

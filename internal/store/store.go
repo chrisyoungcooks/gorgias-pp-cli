@@ -1059,6 +1059,22 @@ func (s *Store) Status() (map[string]int, error) {
 	return status, rows.Err()
 }
 
+func (s *Store) SyncedResourceTypes() []string {
+	rows, err := s.db.Query(`SELECT DISTINCT resource_type FROM resources ORDER BY resource_type`)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var types []string
+	for rows.Next() {
+		var rt string
+		if rows.Scan(&rt) == nil {
+			types = append(types, rt)
+		}
+	}
+	return types
+}
+
 // ResolveByName resolves a human-readable name to a UUID from synced data.
 // If the input is already a UUID, it is returned as-is.
 // matchFields are JSON field names to search against (e.g., "name", "key", "email").

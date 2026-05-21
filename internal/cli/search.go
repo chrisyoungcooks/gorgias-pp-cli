@@ -167,7 +167,16 @@ func newSearchCmd(flags *rootFlags) *cobra.Command {
 			var results []json.RawMessage
 			switch resourceType {
 			case "":
-				results, err = db.Search(query, limit)
+				for _, rt := range db.SyncedResourceTypes() {
+					batch, e := db.SearchResource(rt, query, limit-len(results))
+					if e == nil {
+						results = append(results, batch...)
+					}
+					if len(results) >= limit {
+						results = results[:limit]
+						break
+					}
+				}
 			default:
 				results, err = db.SearchResource(normalizeLocalSearchResourceType(resourceType), query, limit)
 			}

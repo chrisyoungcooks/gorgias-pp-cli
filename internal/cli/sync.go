@@ -632,6 +632,8 @@ func determinePaginationDefaults() paginationDefaults {
 // validation-error 400s on APIs that reject unknown query keys.
 func syncResourceSinceParam(resource string) string {
 	switch resource {
+	case "tickets":
+		return "updated_datetime__gte"
 	}
 	return ""
 }
