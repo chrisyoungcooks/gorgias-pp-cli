@@ -41,6 +41,9 @@ coverage on top of that breaks down as follows.
 - **Global `/messages` endpoint** supports only the `ticket_id` filter —
   no datetime range, no channel filter. Use
   `tickets messages-list <ticket-id>` for per-ticket views.
+- **Ticket list has no documented updated-time cutoff.** The CLI's
+  `sync --resources tickets --since ...` path requests documented
+  `order_by=updated_datetime:desc` and applies the cutoff locally. Gorgias rejects unsupported filters such as `updated_datetime__gte`; do not add that filter unless Gorgias documents it and a tenant smoke accepts it.
 - **Remote `search`** uses Gorgias's `POST /search`, which indexes
   customers, agents, tags, teams, and integrations — **not tickets or
   messages**. For ticket/message text search, sync to local first and

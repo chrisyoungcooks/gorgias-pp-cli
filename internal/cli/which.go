@@ -51,7 +51,7 @@ var whichIndex = []whichEntry{
 
 	// --- Local mirror (sync / search / sql / analytics) ---
 	{Command: "gorgias-pp-cli sync --resources tickets --since 7d", Group: "local",
-		Description:  "Syncs API data to a local SQLite DB so subsequent searches, analytics, and joins run without hitting the API.",
+		Description:  "Syncs API data to a local SQLite DB so subsequent searches, analytics, and joins run without hitting the API. Ticket --since uses documented order_by plus local filtering.",
 		WhyItMatters: "Makes repeated agent-driven lookups (e.g. searching for similar past tickets) practical at scale."},
 	{Command: "gorgias-pp-cli search <query> --agent", Group: "local",
 		Description:  "Full-text search across synced tickets, customers, and messages backed by SQLite FTS5.",

@@ -667,15 +667,28 @@ func (s *Store) SearchResource(resourceType, query string, limit int) ([]json.Ra
 	if limit <= 0 {
 		limit = 50
 	}
-	rows, err := s.db.Query(
-		`SELECT r.data FROM resources r
-		 JOIN resources_fts ON r.id = resources_fts.id AND r.resource_type = resources_fts.resource_type
-		 WHERE resources_fts MATCH ?
-		   AND (? = '' OR r.resource_type = ?)
-		 ORDER BY rank
-		 LIMIT ?`,
-		query, resourceType, resourceType, limit,
-	)
+	var rows *sql.Rows
+	var err error
+	if strings.TrimSpace(resourceType) == "" {
+		rows, err = s.db.Query(
+			`SELECT r.data FROM resources r
+			 JOIN resources_fts ON r.id = resources_fts.id AND r.resource_type = resources_fts.resource_type
+			 WHERE resources_fts MATCH ?
+			 ORDER BY rank
+			 LIMIT ?`,
+			query, limit,
+		)
+	} else {
+		rows, err = s.db.Query(
+			`SELECT r.data FROM resources r
+			 JOIN resources_fts ON r.id = resources_fts.id AND r.resource_type = resources_fts.resource_type
+			 WHERE resources_fts MATCH ?
+			   AND r.resource_type = ?
+			 ORDER BY rank
+			 LIMIT ?`,
+			query, resourceType, limit,
+		)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1027,6 +1040,42 @@ func (s *Store) ClearSyncCursors() error {
 // Used by workflow commands that need custom queries against the local store.
 func (s *Store) Query(query string, args ...any) (*sql.Rows, error) {
 	return s.db.Query(query, args...)
+}
+
+type GroupCount struct {
+	Value string `json:"value"`
+	Count int    `json:"count"`
+}
+
+func (s *Store) GroupByJSONField(resourceType, field string, limit int) ([]GroupCount, error) {
+	if !validIdentifierRE.MatchString(field) {
+		return nil, fmt.Errorf("GroupByJSONField: invalid field name %q (must match %s)", field, validIdentifierRE.String())
+	}
+	query := `SELECT COALESCE(CAST(json_extract(data, ?) AS TEXT), '<nil>') AS value, COUNT(*) AS count
+		FROM resources
+		WHERE resource_type = ?
+		GROUP BY value
+		ORDER BY count DESC, value ASC`
+	args := []any{"$." + field, resourceType}
+	if limit > 0 {
+		query += ` LIMIT ?`
+		args = append(args, limit)
+	}
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var counts []GroupCount
+	for rows.Next() {
+		var group GroupCount
+		if err := rows.Scan(&group.Value, &group.Count); err != nil {
+			return nil, err
+		}
+		counts = append(counts, group)
+	}
+	return counts, rows.Err()
 }
 
 func (s *Store) Count(resourceType string) (int, error) {

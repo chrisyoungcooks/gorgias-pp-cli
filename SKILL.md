@@ -43,7 +43,7 @@ These capabilities aren't available in any other tool for this API.
   ```
 - **`gorgias-pp-cli sync --resources tickets --since 7d && gorgias-pp-cli search 'refund' --agent`** — Syncs API data to a local SQLite DB so subsequent searches, analytics, and joins run without hitting the API.
 
-  _Makes repeated agent-driven lookups (e.g. searching for similar past tickets) practical at scale._
+  _Makes repeated agent-driven lookups (e.g. searching for similar past tickets) practical at scale. Ticket `--since` uses documented `order_by=updated_datetime:desc` plus local filtering; do not add undocumented filters like `updated_datetime__gte` unless Gorgias documents them and a live smoke confirms them._
 
   ```bash
   gorgias-pp-cli sync --resources tickets --since 30d --json
@@ -240,6 +240,8 @@ gorgias-pp-cli sync --resources tickets --since 7d
 ```
 
 Hydrates the local DB so subsequent searches and analytics run offline against a recent snapshot instead of hitting the API on every call.
+
+For tickets, `--since` is implemented as documented newest-first ordering plus a local cutoff. A live test on May 23, 2026 showed `updated_datetime__gte` returns HTTP 400 `Unknown field`, so agents should not try to "repair" ticket sync with that parameter.
 
 ### Full-text search across synced tickets
 

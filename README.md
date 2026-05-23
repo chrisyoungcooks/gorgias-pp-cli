@@ -72,7 +72,7 @@ These capabilities are designed for agent-driven work and don't exist in the Gor
 
 ### Local state that compounds
 
-- **`gorgias-pp-cli sync`** — Mirror Gorgias resources into local SQLite. Incremental by default (each resource records a cursor and resumes from there); `--full` clears the cursor; `--since 7d` constrains the window. Mirror lives at `$XDG_DATA_HOME/gorgias-pp-cli/data.db`.
+- **`gorgias-pp-cli sync`** — Mirror Gorgias resources into local SQLite. Incremental by default (each resource records a cursor and resumes from there); `--full` clears the cursor; `--since 7d` constrains the window. For tickets, `--since` uses documented `order_by=updated_datetime:desc` plus a local cutoff because Gorgias does not expose a documented ticket datetime filter. Mirror lives at `$XDG_DATA_HOME/gorgias-pp-cli/data.db`.
 - **`gorgias-pp-cli search <query>`** — FTS5 full-text search across the local mirror. Subsecond against tens of thousands of tickets/customers/messages once synced.
 - **`gorgias-pp-cli sql "SELECT ..."`** — Read-only SQL escape hatch over the mirror. SELECT/WITH only; comment-prefix bypass gated. Answers analytical questions the Gorgias API doesn't expose (cohort, group-by, top-N, joins).
 - **`gorgias-pp-cli stale --days N`** — Tickets with no activity in N days. Sources from the local mirror; never hammers the API.
@@ -275,6 +275,8 @@ XDG paths are honored on Unix; on Windows the CLI falls back to `os.UserConfigDi
 
 **`search <query>` returns nothing live** — Gorgias's `/search` indexes customers/agents/tags/teams/integrations, not tickets or messages. For ticket text search, sync first: `gorgias-pp-cli sync --resources tickets --since 30d && gorgias-pp-cli search <query> --data-source local`.
 
+**`sync --resources tickets --since 7d` scans more pages than expected** — Ticket `--since` is intentionally a local cutoff over documented `order_by=updated_datetime:desc`. Do not "fix" this by adding undocumented filters like `updated_datetime__gte`; a live test on May 23, 2026 returned HTTP 400 `Unknown field` for that parameter. If the API ever returns tickets out of newest-first order, the CLI emits a `sync_warning` and continues scanning/filtering locally rather than stopping early.
+
 **HTTP 400 "Must be at most 100" on a list** — Gorgias caps `--limit` at 100. Paginate via `--cursor <meta.next_cursor>`.
 
 **HTTP 400 on `customers list --language en --cursor ...`** — Gorgias rejects `language`/`timezone` filters when combined with `cursor`/`limit`/`order-by`. Drop the pagination flags or use `--name`/`--email` instead.
@@ -294,6 +296,7 @@ Non-obvious behaviors of the Gorgias API itself that you'll hit if you exercise 
 - **`POST /integrations` with `type: "http"` requires `http.url`, `http.method`, `http.request_content_type`, and `http.response_content_type`.** The docs treat `http` as an opaque object; these requirements are visible only in an example body.
 - **`POST /rules` rejects the `code` field unless it matches Gorgias's internal AST grammar.** Plain JavaScript is rejected even when syntactically complete. Pass `code_ast` (a pre-parsed AST) and confirm the shape with Gorgias support.
 - **`POST /tickets` requires `messages[0].source.from`** even when `from_agent: true`. Omitting it returns `400 "From field is missing or empty"`.
+- **`GET /tickets` has no documented server-side updated-time cutoff.** Use `sync --resources tickets --since ...` for local mirroring; it requests documented `order_by=updated_datetime:desc` and filters locally. Avoid `updated_datetime__gte` unless Gorgias documents it and a live smoke confirms it for the tenant.
 - **`DELETE /custom-fields/{id}` returns 405.** The Gorgias API has no path to delete custom fields. Archive via the admin UI; plan create-once-and-keep accordingly.
 - **`POST /tickets` outbound dispatch fails silently if `source.from.address` doesn't match the integration's `meta.address`.** The create returns 201 and the message is processed, but `sent_datetime` stays null and `last_sending_error` records `"No integration was found to send this email."` Always pair `integration_id` with a `source.from.address` that matches `GET /integrations/{id}.meta.address`. A 201 does not mean the email was delivered.
 

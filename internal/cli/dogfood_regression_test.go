@@ -5,10 +5,12 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/chrisyoungcooks/gorgias-pp-cli/internal/store"
 )
@@ -75,6 +77,41 @@ func TestSyncTicketsSinceUsesLocalCutoff(t *testing.T) {
 	}
 }
 
+func TestFilterSyncItemsByLocalSinceKeepsOutOfOrderFreshItems(t *testing.T) {
+	cutoff := time.Date(2026, 5, 13, 0, 0, 0, 0, time.UTC)
+	items := []json.RawMessage{
+		json.RawMessage(`{"id":1,"updated_datetime":"2026-05-14T00:00:00Z","subject":"fresh"}`),
+		json.RawMessage(`{"id":2,"updated_datetime":"2026-05-12T00:00:00Z","subject":"old"}`),
+		json.RawMessage(`{"id":3,"updated_datetime":"2026-05-13T12:00:00Z","subject":"fresh but out of order"}`),
+	}
+
+	result := filterSyncItemsByLocalSince(items, localSinceFilter{
+		Cutoff: cutoff,
+		Fields: []string{"updated_datetime"},
+	}, true, time.Time{}, false)
+
+	if !result.OrderingBroken {
+		t.Fatalf("OrderingBroken = false, want true")
+	}
+	if result.HitCutoff {
+		t.Fatalf("HitCutoff = true, want false when the page proves ordering is not newest-first")
+	}
+	if len(result.Items) != 2 {
+		t.Fatalf("kept item count = %d, want 2", len(result.Items))
+	}
+	var kept []map[string]any
+	for _, raw := range result.Items {
+		var obj map[string]any
+		if err := json.Unmarshal(raw, &obj); err != nil {
+			t.Fatalf("decode kept item: %v", err)
+		}
+		kept = append(kept, obj)
+	}
+	if kept[0]["id"] != float64(1) || kept[1]["id"] != float64(3) {
+		t.Fatalf("kept ids = %#v, want 1 and 3", kept)
+	}
+}
+
 func TestSearchLocalDefaultQueriesResourcesFTS(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "data.db")
 	db, err := store.Open(dbPath)
@@ -109,17 +146,58 @@ func TestSearchLocalDefaultQueriesResourcesFTS(t *testing.T) {
 	}
 }
 
+func TestSearchResourceSplitsGlobalAndTypedFTS(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "data.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer db.Close()
+	if err := db.Upsert("tickets", "1", []byte(`{"id":1,"subject":"Cancel order"}`)); err != nil {
+		t.Fatalf("upsert ticket: %v", err)
+	}
+	if err := db.Upsert("customers", "2", []byte(`{"id":2,"name":"Cancel Customer"}`)); err != nil {
+		t.Fatalf("upsert customer: %v", err)
+	}
+
+	global, err := db.Search("cancel", 10)
+	if err != nil {
+		t.Fatalf("global search: %v", err)
+	}
+	if len(global) != 2 {
+		t.Fatalf("global search count = %d, want 2", len(global))
+	}
+	tickets, err := db.SearchResource("tickets", "cancel", 10)
+	if err != nil {
+		t.Fatalf("typed search: %v", err)
+	}
+	if len(tickets) != 1 {
+		t.Fatalf("typed search count = %d, want 1", len(tickets))
+	}
+	var ticket map[string]any
+	if err := json.Unmarshal(tickets[0], &ticket); err != nil {
+		t.Fatalf("decode typed search result: %v", err)
+	}
+	if ticket["subject"] != "Cancel order" {
+		t.Fatalf("typed search subject = %v, want Cancel order", ticket["subject"])
+	}
+}
+
 func TestAnalyticsGroupByUsesGenericResourcesTable(t *testing.T) {
 	db, err := store.Open(filepath.Join(t.TempDir(), "data.db"))
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
 	defer db.Close()
-	for id, payload := range map[string]string{
-		"1": `{"id":1,"status":"open"}`,
-		"2": `{"id":2,"status":"closed"}`,
-		"3": `{"id":3,"status":"closed"}`,
-	} {
+	for i := 0; i < 225; i++ {
+		id := fmt.Sprintf("closed-%03d", i)
+		payload := fmt.Sprintf(`{"id":%q,"status":"closed"}`, id)
+		if err := db.Upsert("tickets", id, []byte(payload)); err != nil {
+			t.Fatalf("upsert ticket %s: %v", id, err)
+		}
+	}
+	for i := 0; i < 25; i++ {
+		id := fmt.Sprintf("open-%03d", i)
+		payload := fmt.Sprintf(`{"id":%q,"status":"open"}`, id)
 		if err := db.Upsert("tickets", id, []byte(payload)); err != nil {
 			t.Fatalf("upsert ticket %s: %v", id, err)
 		}
@@ -128,8 +206,11 @@ func TestAnalyticsGroupByUsesGenericResourcesTable(t *testing.T) {
 	output := captureStdout(t, func() error {
 		return runGroupBy(db, "tickets", "status", 10, &rootFlags{})
 	})
-	if !bytes.Contains([]byte(output), []byte("closed\t2")) {
+	if !bytes.Contains([]byte(output), []byte("closed\t225")) {
 		t.Fatalf("analytics output missing closed count: %q", output)
+	}
+	if !bytes.Contains([]byte(output), []byte("open\t25")) {
+		t.Fatalf("analytics output missing open count: %q", output)
 	}
 }
 

@@ -405,12 +405,13 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			"Use the sql tool for ad-hoc analysis on synced data. Run sync first to populate the local database.",
 			"Use the search tool for full-text search across all synced resources. Faster than iterating list endpoints.",
 			"Prefer sql/search over repeated API calls when the data is already synced.",
+			"Ticket sync since windows use documented order_by=updated_datetime:desc plus local filtering; do not add updated_datetime__gte unless Gorgias documents and live-accepts it.",
 		},
 		// Command-mirror capabilities are exposed through MCP by shelling out
 		// to the companion CLI binary.
 		"command_mirror_capabilities": []map[string]string{
 			{"name": "Doctor with credential verification", "command": "gorgias-pp-cli doctor --json", "description": "Probes /account with the configured credentials and reports `credentials: valid` only when an authenticated call...", "rationale": "Every other Gorgias wrapper makes you set env vars and find out at first call whether they're right; doctor surfaces...", "via": "mcp-command-mirror"},
-			{"name": "Local SQLite mirror for offline analytics", "command": "gorgias-pp-cli sync --resources tickets --since 7d && gorgias-pp-cli search 'refund' --agent", "description": "Syncs API data to a local SQLite DB so subsequent searches, analytics, and joins run without hitting the API.", "rationale": "Gorgias's API is rate-limited per account and pagination-heavy; mirroring locally turns a 30-second multi-page...", "via": "mcp-command-mirror"},
+			{"name": "Local SQLite mirror for offline analytics", "command": "gorgias-pp-cli sync --resources tickets --since 7d && gorgias-pp-cli search 'refund' --agent", "description": "Syncs API data to a local SQLite DB so subsequent searches, analytics, and joins run without hitting the API. Ticket --since uses order_by=updated_datetime:desc plus local filtering.", "rationale": "Gorgias's API is rate-limited per account and pagination-heavy; mirroring locally turns a 30-second multi-page...", "via": "mcp-command-mirror"},
 		},
 		"playbook": []map[string]string{
 			{"topic": "Doctor with credential verification", "insight": "Every other Gorgias wrapper makes you set env vars and find out at first call whether they're right; doctor surfaces auth failure as the first command you run."},

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 
 	"github.com/chrisyoungcooks/gorgias-pp-cli/internal/store"
 	"github.com/spf13/cobra"
@@ -90,44 +89,21 @@ func newAnalyticsCmd(flags *rootFlags) *cobra.Command {
 }
 
 func runGroupBy(db *store.Store, resourceType, field string, limit int, flags *rootFlags) error {
-	items, err := db.List(resourceType, 0)
+	groups, err := db.GroupByJSONField(resourceType, field, limit)
 	if err != nil {
 		return err
-	}
-
-	counts := make(map[string]int)
-	for _, item := range items {
-		var obj map[string]any
-		if err := json.Unmarshal(item, &obj); err != nil {
-			continue
-		}
-		val := fmt.Sprintf("%v", obj[field])
-		counts[val]++
-	}
-
-	type kv struct {
-		Key   string `json:"value"`
-		Count int    `json:"count"`
-	}
-	var sorted []kv
-	for k, v := range counts {
-		sorted = append(sorted, kv{k, v})
-	}
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Count > sorted[j].Count })
-	if limit > 0 && len(sorted) > limit {
-		sorted = sorted[:limit]
 	}
 
 	if flags.asJSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(sorted)
+		return enc.Encode(groups)
 	}
 
 	fmt.Printf("%s\tCount\n", field)
 	fmt.Println("---\t-----")
-	for _, kv := range sorted {
-		fmt.Printf("%s\t%d\n", kv.Key, kv.Count)
+	for _, group := range groups {
+		fmt.Printf("%s\t%d\n", group.Value, group.Count)
 	}
 	return nil
 }

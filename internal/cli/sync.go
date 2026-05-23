@@ -60,7 +60,8 @@ func newSyncCmd(flags *rootFlags) *cobra.Command {
 			"next sync resumes from there. `--full` clears the cursor and resyncs from the top.\n" +
 			"`--since 7d` constrains the window when the API supports a since/created_after filter;\n" +
 			"tickets use documented updated_datetime ordering plus a local cutoff because Gorgias\n" +
-			"does not expose a ticket since query parameter.\n" +
+			"does not expose a ticket since query parameter. Do not add undocumented filters such\n" +
+			"as updated_datetime__gte unless Gorgias documents and live-accepts them.\n" +
 			"`--latest-only` caps each resource at its first page (useful for keeping the head warm\n" +
 			"without a historical backfill).\n\n" +
 			"Tuning: `--concurrency` raises worker count for resources that paginate independently;\n" +
@@ -400,6 +401,10 @@ func syncResource(c interface {
 	var extractFailureTotal int
 	var consumedTotal int
 	anomalyEmitted := false
+	localSinceCanStopAtCutoff := true
+	localSinceOrderingWarned := false
+	var localSinceLastSeen time.Time
+	var localSinceHaveLastSeen bool
 
 	for {
 		params := map[string]string{}
@@ -463,8 +468,20 @@ func syncResource(c interface {
 		pageItemCount := len(items)
 		localSinceHitCutoff := false
 		if localSinceActive {
-			canStopAtCutoff := params[localSince.OrderParam] == localSince.OrderValue
-			items, localSinceHitCutoff = filterSyncItemsByLocalSince(items, localSince, canStopAtCutoff)
+			canStopAtCutoff := localSinceCanStopAtCutoff && params[localSince.OrderParam] == localSince.OrderValue
+			filtered := filterSyncItemsByLocalSince(items, localSince, canStopAtCutoff, localSinceLastSeen, localSinceHaveLastSeen)
+			items = filtered.Items
+			localSinceHitCutoff = filtered.HitCutoff
+			localSinceLastSeen = filtered.LastSeen
+			localSinceHaveLastSeen = filtered.HaveLastSeen
+			if filtered.OrderingBroken {
+				localSinceCanStopAtCutoff = false
+				localSinceHitCutoff = false
+				if !localSinceOrderingWarned {
+					emitLocalSinceOrderingWarning(resource, localSince)
+					localSinceOrderingWarned = true
+				}
+			}
 			if len(items) == 0 && localSinceHitCutoff {
 				break
 			}
@@ -652,6 +669,11 @@ func syncResourceLocalSinceFilter(resource, effectiveSince, sinceParam string) (
 	var filter localSinceFilter
 	switch resource {
 	case "tickets":
+		// Gorgias's ticket list docs expose ordering, not a server-side
+		// updated-date cutoff. A live smoke on 2026-05-23 rejected
+		// updated_datetime__gte with HTTP 400 "Unknown field", so keep
+		// tickets on documented order_by plus local filtering unless a
+		// future API version is both documented and independently verified.
 		filter = localSinceFilter{
 			OrderParam: "order_by",
 			OrderValue: "updated_datetime:desc",
@@ -668,23 +690,66 @@ func syncResourceLocalSinceFilter(resource, effectiveSince, sinceParam string) (
 	return filter, true, nil
 }
 
-func filterSyncItemsByLocalSince(items []json.RawMessage, filter localSinceFilter, canStopAtCutoff bool) ([]json.RawMessage, bool) {
-	kept := make([]json.RawMessage, 0, len(items))
+type localSinceFilterResult struct {
+	Items          []json.RawMessage
+	HitCutoff      bool
+	OrderingBroken bool
+	LastSeen       time.Time
+	HaveLastSeen   bool
+}
+
+func filterSyncItemsByLocalSince(items []json.RawMessage, filter localSinceFilter, canStopAtCutoff bool, lastSeen time.Time, haveLastSeen bool) localSinceFilterResult {
+	result := localSinceFilterResult{
+		Items:        make([]json.RawMessage, 0, len(items)),
+		LastSeen:     lastSeen,
+		HaveLastSeen: haveLastSeen,
+	}
+	sawCutoff := false
 	for _, item := range items {
 		itemTime, ok := syncItemTime(item, filter.Fields)
 		if !ok {
-			kept = append(kept, item)
+			result.Items = append(result.Items, item)
 			continue
 		}
+		if result.HaveLastSeen && itemTime.After(result.LastSeen) {
+			result.OrderingBroken = true
+		}
+		result.LastSeen = itemTime
+		result.HaveLastSeen = true
 		if itemTime.Before(filter.Cutoff) {
-			if canStopAtCutoff {
-				return kept, true
-			}
+			sawCutoff = true
 			continue
 		}
-		kept = append(kept, item)
+		result.Items = append(result.Items, item)
 	}
-	return kept, false
+	result.HitCutoff = sawCutoff && canStopAtCutoff && !result.OrderingBroken
+	return result
+}
+
+func emitLocalSinceOrderingWarning(resource string, filter localSinceFilter) {
+	msg := fmt.Sprintf("%s --since uses %s=%s plus a local %s cutoff because the Gorgias ticket list endpoint has no documented datetime filter; the API returned records out of newest-first order, so this sync will continue scanning and filter locally instead of stopping early.",
+		resource, filter.OrderParam, filter.OrderValue, strings.Join(filter.Fields, "/"))
+	if humanFriendly {
+		fmt.Fprintf(os.Stderr, "\n  %s: warning: %s\n", resource, msg)
+		return
+	}
+	payload := struct {
+		Event      string `json:"event"`
+		Resource   string `json:"resource"`
+		Reason     string `json:"reason"`
+		OrderParam string `json:"order_param"`
+		OrderValue string `json:"order_value"`
+		Message    string `json:"message"`
+	}{
+		Event:      "sync_warning",
+		Resource:   resource,
+		Reason:     "local_since_ordering_unverified",
+		OrderParam: filter.OrderParam,
+		OrderValue: filter.OrderValue,
+		Message:    msg,
+	}
+	out, _ := json.Marshal(payload)
+	fmt.Fprintln(os.Stdout, string(out))
 }
 
 func syncItemTime(item json.RawMessage, fields []string) (time.Time, bool) {
