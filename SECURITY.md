@@ -40,6 +40,7 @@ The `--dry-run` flag masks the `Authorization` header in its preview
 output. The User-Agent header carries the CLI version but no
 tenant-identifying information.
 
-For secret-manager-managed credentials, use `your credential-manager wrapper` to inject
-the resolved values at invocation time rather than copying secrets into
-shell profiles. See [MCP.md](./MCP.md) for the wrapper-script pattern.
+For credentials managed outside the shell, prefer a wrapper script that
+resolves secrets from your credential manager at invocation time rather
+than copying API keys into shell profiles. See [MCP.md](./MCP.md) for
+the wrapper-script pattern.

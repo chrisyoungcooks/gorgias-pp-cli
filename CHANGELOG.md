@@ -22,6 +22,13 @@ upgrade.
   or silently sampling only the first 200 local rows.
 - Public release docs no longer reference a company-specific security
   contact.
+- Public release hygiene now omits the live-credential acceptance proof
+  artifact and uses secret-manager-neutral wrapper guidance.
+
+### Added
+
+- Restored an MCP package `manifest.json` for public-library/MCPB-style
+  installs, including the required `GORGIAS_BASE_URL` tenant setting.
 
 ## v0.1.6 — 2026-05-15
 

@@ -101,6 +101,6 @@ to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desk
 }
 ```
 
-For secret-manager-managed credentials (or any other secret store), wrap the
-binary in a script that resolves the secrets and exec's the MCP server.
-That keeps API keys out of the config file.
+For credentials managed outside Claude Desktop, wrap the binary in a
+script that resolves secrets from your own credential manager and execs
+the MCP server. That keeps API keys out of the config file.

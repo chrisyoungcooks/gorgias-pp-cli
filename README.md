@@ -247,7 +247,7 @@ Install `gorgias-pp-mcp` (see [Install](#install)), then add it to your Claude D
 }
 ```
 
-Restart Claude Desktop. The full config schema (including the `credential-manager wrapper`-wrapper pattern for secret-manager-managed secrets) is in [MCP.md](./MCP.md).
+Restart Claude Desktop. The full config schema and secret-manager wrapper guidance is in [MCP.md](./MCP.md).
 
 ## Cursor
 

@@ -1,4 +1,4 @@
-# Local credentials (secret-manager references only, but never committed)
+# Local credential mounts and env files (never committed)
 .op-env/
 
 # Compiled binaries at repo root (anchored — does NOT match cmd/gorgias-pp-cli/)
@@ -23,7 +23,6 @@
 /mcp-shipcheck.json
 /dogfood-results.json
 /workflow-verify-report.json
-/tools-manifest.json
 
 # IDE
 .vscode/
