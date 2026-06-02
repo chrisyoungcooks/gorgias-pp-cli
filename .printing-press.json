@@ -19,7 +19,8 @@
   "auth_type": "api_key",
   "auth_env_vars": [
     "GORGIAS_USERNAME",
-    "GORGIAS_API_KEY"
+    "GORGIAS_API_KEY",
+    "GORGIAS_BASE_URL"
   ],
   "auth_env_var_specs": [
     {
@@ -33,6 +34,12 @@
       "kind": "per_call",
       "required": true,
       "sensitive": true
+    },
+    {
+      "name": "GORGIAS_BASE_URL",
+      "kind": "per_call",
+      "required": true,
+      "sensitive": false
     }
   ],
   "auth_key_url": "https://docs.gorgias.com/en-US/rest-api-208286",

@@ -109,7 +109,7 @@ upgrade.
 - A tenant-specific view id was hardcoded in the README, profile.go, tickets_list.go,
   and client_test.go as an example. Scrubbed to `<view-id>` placeholders
   (or `123456789` in test fixtures) so the docs don't read like they
-  leak a tenant-specific environment view.
+  expose tenant-specific state.
 - `mcp-descriptions.json` carried a tenant-specific numeric id as a documentation
   example. Scrubbed to the standard `123456789` placeholder.
 

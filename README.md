@@ -302,7 +302,7 @@ Non-obvious behaviors of the Gorgias API itself that you'll hit if you exercise 
 
 ## Known gaps
 
-See [KNOWN_GAPS.md](./KNOWN_GAPS.md) for the long form. The short version: write endpoints have dry-run request-shape coverage and confirmation guards; tenant-specific live validation should be run against a sandbox tenant before production mutation. Phone/voice endpoints haven't been exercised against a tenant with a voice integration.
+See [KNOWN_GAPS.md](./KNOWN_GAPS.md) for the long form. The short version: write endpoints have dry-run request-shape coverage and confirmation guards, but tenant-specific live validation should be run against a sandbox tenant before production mutation. Phone/voice endpoints haven't been exercised against a tenant with a voice integration.
 
 ## Sources & inspiration
 
