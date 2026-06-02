@@ -106,11 +106,11 @@ upgrade.
   every doc to reference the live count from the `context` tool, and
   renamed the `.printing-press.json` field to `mcp_endpoint_count` so
   the 108 number doesn't pretend to be tools.
-- `view-id 123456789` was hardcoded in the README, profile.go, tickets_list.go,
+- A tenant-specific view id was hardcoded in the README, profile.go, tickets_list.go,
   and client_test.go as an example. Scrubbed to `<view-id>` placeholders
   (or `123456789` in test fixtures) so the docs don't read like they
   leak a tenant-specific environment view.
-- `mcp-descriptions.json` carried `{"id":"123456789"}` as a documentation
+- `mcp-descriptions.json` carried a tenant-specific numeric id as a documentation
   example. Scrubbed to the standard `123456789` placeholder.
 
 ### Added

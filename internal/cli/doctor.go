@@ -219,7 +219,7 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 			// whether to trust the cached data before issuing queries.
 			report["cache"] = collectCacheReport(cmd.Context(), "")
 
-			report["version"] = version
+			report["version"] = Version()
 
 			if flags.asJSON {
 				// In JSON mode, the doctor report already carries every
