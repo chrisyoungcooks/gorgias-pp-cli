@@ -5,6 +5,24 @@ follows [Keep a Changelog](https://keepachangelog.com/) with one section
 per released tag. Each entry summarizes what a user would notice on
 upgrade.
 
+## v0.1.7 — 2026-06-02
+
+### Fixed
+
+- `sync --resources tickets --since ...` now keeps using documented
+  `order_by=updated_datetime:desc` plus a local cutoff for tickets,
+  and detects out-of-order API pages before trusting an early cutoff.
+  The docs now explicitly warn agents not to invent unsupported filters
+  such as `updated_datetime__gte`, which the live API rejects.
+- Local FTS search now separates global and resource-scoped SQL paths,
+  restoring expected results for `search <query> --data-source local`
+  without requiring `--type`.
+- `analytics --type tickets --group-by status` now aggregates over the
+  generic `resources` table instead of assuming a typed `tickets` table
+  or silently sampling only the first 200 local rows.
+- Public release docs no longer reference a company-specific security
+  contact.
+
 ## v0.1.6 — 2026-05-15
 
 ### Fixed
